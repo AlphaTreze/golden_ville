@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart';
-import 'usuario_modelo.dart';
+import '../models/usuario_modelo.dart';
+import '../models/servico_modelo.dart';
+import '../widgets/rodape.dart';
 
 class FiltroServicoScreen extends StatefulWidget {
   final Usuario usuarioLogado;
@@ -11,61 +12,89 @@ class FiltroServicoScreen extends StatefulWidget {
 }
 
 class _FiltroServicoScreenState extends State<FiltroServicoScreen> {
-  final TextEditingController colaboradorController = TextEditingController();
-  final TextEditingController localController = TextEditingController();
+  final statusController = TextEditingController();
+  final colaboradorController = TextEditingController();
   List<Servico> resultados = [];
 
-  void _filtrar() {
-    final filtroColaborador = colaboradorController.text.toLowerCase();
-    final filtroLocal = localController.text.toLowerCase();
+  void filtrarServicos() {
+    String status = statusController.text.trim().toLowerCase();
+    String colaborador = colaboradorController.text.trim().toLowerCase();
 
     setState(() {
       resultados = listaServicos.where((s) {
-        final matchesColaborador = filtroColaborador.isEmpty || s.colaborador.toLowerCase().contains(filtroColaborador);
-        final matchesLocal = filtroLocal.isEmpty || s.descricao.toLowerCase().contains(filtroLocal);
-        return matchesColaborador && matchesLocal;
+        bool statusMatch = status.isEmpty || s.status.toLowerCase().contains(status);
+        bool colaboradorMatch = colaborador.isEmpty || s.colaborador.toLowerCase().contains(colaborador);
+        return statusMatch && colaboradorMatch;
       }).toList();
     });
+
+    if (resultados.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nenhum serviço encontrado")));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Filtrar Ordem de Serviço", style: TextStyle(color: Colors.black)),
-        backgroundColor: const Color(0xFFB2DFDB),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       backgroundColor: const Color(0xFFB2DFDB),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(controller: colaboradorController, decoration: const InputDecoration(labelText: "Buscar por Colaborador")),
-            const SizedBox(height: 10),
-            TextField(controller: localController, decoration: const InputDecoration(labelText: "Buscar por Local/Serviço")),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _filtrar, child: const Text("Filtrar")),
-            const SizedBox(height: 20),
-            const Text("Resultados:", style: TextStyle(fontWeight: FontWeight.bold)),
-            Expanded(
-              child: ListView.builder(
-                itemCount: resultados.length,
-                itemBuilder: (context, index) {
-                  final s = resultados[index];
-                  return ListTile(
-                    title: Text(s.descricao),
-                    subtitle: Text("Colaborador: ${s.colaborador} | Status: ${s.status}"),
-                  );
-                },
+      appBar: AppBar(title: const Text("Filtrar Ordens de Serviço"), backgroundColor: const Color(0xFFB2DFDB)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: statusController,
+                      decoration: const InputDecoration(
+                        labelText: "Status (Aberto / Finalizado)",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: colaboradorController,
+                      decoration: const InputDecoration(
+                        labelText: "Colaborador",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(onPressed: filtrarServicos, child: const Text("Filtrar")),
+                    const SizedBox(height: 20),
+                    if (resultados.isNotEmpty)
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: resultados.length,
+                        itemBuilder: (context, index) {
+                          final s = resultados[index];
+                          return ListTile(
+                            title: Text(s.descricao),
+                            subtitle: Text("Colaborador: ${s.colaborador}"),
+                          );
+                        },
+                      ),
+                    const Spacer(),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
+      bottomNavigationBar: const Rodape(),
     );
+  }
+
+  @override
+  void dispose() {
+    statusController.dispose();
+    colaboradorController.dispose();
+    super.dispose();
   }
 }

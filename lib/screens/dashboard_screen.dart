@@ -1,123 +1,142 @@
 import 'package:flutter/material.dart';
+import '../models/usuario_modelo.dart'; // Import do modelo de usuário
 import 'ordem_servico_screen.dart';
-import 'filtro_servico_screen.dart';
-import 'cadastro_usuario_screen.dart';
-import 'usuario_modelo.dart';
-import '../widgets/rodape.dart';
-
-class Servico {
-  String descricao;
-  String status; // "Aberto" ou "Finalizado"
-  String colaborador;
-
-  Servico({
-    required this.descricao,
-    required this.status,
-    required this.colaborador,
-  });
-}
-
-List<Servico> listaServicos = [
-  Servico(descricao: "Troca de lâmpada", status: "Aberto", colaborador: "João"),
-  Servico(descricao: "Reparo hidráulico", status: "Finalizado", colaborador: "Carlos"),
-];
 
 class DashboardScreen extends StatelessWidget {
   final Usuario usuarioLogado;
+
   const DashboardScreen({super.key, required this.usuarioLogado});
 
   @override
   Widget build(BuildContext context) {
-    final abertos = listaServicos.where((s) => s.status == "Aberto").take(10).toList();
-    final finalizados = listaServicos.where((s) => s.status == "Finalizado").take(5).toList();
+    // Filtra apenas os colaboradores de nível "comum"
+    List<Usuario> colaboradores = usuariosCadastrados.where((u) => u.nivel == 'comum').toList();
+
+    // Lista de cards de funcionalidades
+    final List<_DashboardCard> cards = [
+      _DashboardCard(
+        title: 'Nova Ordem de Serviço',
+        icon: Icons.add_box,
+        color: Colors.teal,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OrdemServicoScreen(
+                usuarioLogado: usuarioLogado,
+                colaboradores: colaboradores,
+              ),
+            ),
+          );
+        },
+      ),
+      _DashboardCard(
+        title: 'Ordens de Serviço Abertas',
+        icon: Icons.pending_actions,
+        color: Colors.orange,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Funcionalidade ainda não implementada')),
+          );
+        },
+      ),
+      _DashboardCard(
+        title: 'Ordens de Serviço Finalizadas',
+        icon: Icons.check_circle,
+        color: Colors.green,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Funcionalidade ainda não implementada')),
+          );
+        },
+      ),
+      _DashboardCard(
+        title: 'Configurações',
+        icon: Icons.settings,
+        color: Colors.blueGrey,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Funcionalidade ainda não implementada')),
+          );
+        },
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFB2DFDB),
-        title: Text("Dashboard - ${usuarioLogado.nome}", style: const TextStyle(color: Colors.black)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text('Dashboard - ${usuarioLogado.nome}'),
+        centerTitle: true,
       ),
-      body: Container(
-        color: const Color(0xFFB2DFDB),
-        padding: const EdgeInsets.all(20),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Últimos 10 Serviços em Aberto",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-            Expanded(
-              child: ListView.builder(
-                itemCount: abertos.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(abertos[index].descricao, style: const TextStyle(color: Colors.black)),
-                    subtitle: Text("Colaborador: ${abertos[index].colaborador}", style: const TextStyle(color: Colors.black54)),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text("Últimos 5 Serviços Finalizados",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-            SizedBox(
-              height: 150,
-              child: ListView.builder(
-                itemCount: finalizados.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(finalizados[index].descricao, style: const TextStyle(color: Colors.black)),
-                    subtitle: Text("Colaborador: ${finalizados[index].colaborador}", style: const TextStyle(color: Colors.black54)),
-                  );
-                },
-              ),
+            Text(
+              'Bem-vindo, ${usuarioLogado.nome}!',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => OrdemServicoScreen(usuarioLogado: usuarioLogado),
-                      ),
-                    );
-                  },
-                  child: const Text("Criar Ordem de Serviço"),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => FiltroServicoScreen(usuarioLogado: usuarioLogado),
-                      ),
-                    );
-                  },
-                  child: const Text("Filtrar OS"),
-                ),
-                if (usuarioLogado.nivel == "master")
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CadastroUsuarioScreen(usuarioLogado: usuarioLogado),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Define quantidade de colunas dependendo da largura
+                  int crossAxisCount = constraints.maxWidth > 800
+                      ? 4
+                      : constraints.maxWidth > 600
+                          ? 2
+                          : 1;
+
+                  return GridView.count(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    children: cards.map((card) {
+                      return GestureDetector(
+                        onTap: card.onTap,
+                        child: Card(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 4,
+                          color: card.color,
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(card.icon, size: 50, color: Colors.white),
+                                const SizedBox(height: 10),
+                                Text(
+                                  card.title,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       );
-                    },
-                    child: const Text("Cadastrar Usuário"),
-                  ),
-              ],
+                    }).toList(),
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: const Rodape(),
     );
   }
+}
+
+// Classe auxiliar para os cards do dashboard
+class _DashboardCard {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  _DashboardCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 }

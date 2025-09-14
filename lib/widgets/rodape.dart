@@ -8,10 +8,13 @@ class Rodape extends StatelessWidget {
     return Container(
       color: const Color(0xFFB2DFDB),
       padding: const EdgeInsets.all(10),
-      child: const Text(
-        "Contato da Administração: (15) 99741-3900 | Responsável Técnico: Eduardo Borges",
-        style: TextStyle(color: Colors.black),
-        textAlign: TextAlign.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Text("Golden Ville - Todos os direitos reservados", style: TextStyle(color: Colors.black)),
+          SizedBox(height: 5),
+          Text("Localização: Rua Exemplo, 123 - Cidade, Estado", style: TextStyle(color: Colors.black54)),
+        ],
       ),
     );
   }

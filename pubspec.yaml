@@ -1,6 +1,6 @@
 name: golden_ville
-description: Sistema de manutenção Residencial Golden Ville
-publish_to: 'none'
+description: Sistema de manutenção Golden Ville
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -9,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  image_picker: ^0.8.7+5
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.5
+  image_picker: ^0.8.7+4
 
 dev_dependencies:
   flutter_test:
@@ -21,4 +21,4 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/watermark.png
+    - assets/images/

@@ -10,10 +10,8 @@ class Servico {
   });
 }
 
-// Banco simulado em memória
+// Lista global de serviços
 List<Servico> listaServicos = [
   Servico(descricao: "Troca de lâmpada", status: "Aberto", colaborador: "João"),
   Servico(descricao: "Reparo hidráulico", status: "Finalizado", colaborador: "Carlos"),
-  Servico(descricao: "Limpeza da piscina", status: "Aberto", colaborador: "Ana"),
-  Servico(descricao: "Conserto do portão", status: "Finalizado", colaborador: "Marcos"),
 ];

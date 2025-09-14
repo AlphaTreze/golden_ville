@@ -1,246 +1,184 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart';
-import 'usuario_modelo.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-
-class OrdemServico {
-  int numero;
-  DateTime dataSolicitacao;
-  String tipoManutencao;
-  Usuario colaborador;
-  String setor;
-  DateTime? dataFinalizacao;
-  String? foto; // caminho local da foto
-  String observacao;
-
-  OrdemServico({
-    required this.numero,
-    required this.dataSolicitacao,
-    required this.tipoManutencao,
-    required this.colaborador,
-    required this.setor,
-    this.dataFinalizacao,
-    this.foto,
-    required this.observacao,
-  });
-}
-
-List<OrdemServico> listaOrdensServico = [];
+import '../models/usuario_modelo.dart';
 
 class OrdemServicoScreen extends StatefulWidget {
   final Usuario usuarioLogado;
-  const OrdemServicoScreen({super.key, required this.usuarioLogado});
+  final List<Usuario> colaboradores;
+
+  const OrdemServicoScreen({
+    super.key,
+    required this.usuarioLogado,
+    required this.colaboradores,
+  });
 
   @override
   State<OrdemServicoScreen> createState() => _OrdemServicoScreenState();
 }
 
 class _OrdemServicoScreenState extends State<OrdemServicoScreen> {
-  int _numeroOrdem = 1;
-  DateTime? _dataSolicitacao;
-  DateTime? _dataFinalizacao;
-  String tipoManutencao = "";
+  int osNumero = 1; // Número automático da OS
+  DateTime? dataSolicitacao;
+  String tipoManutencao = '';
   Usuario? colaboradorSelecionado;
-  String setor = "";
+  String setorManutencao = '';
+  DateTime? dataFinalizacao;
+  String observacao = '';
   String? fotoPath;
-  String observacao = "";
 
   final TextEditingController tipoController = TextEditingController();
   final TextEditingController setorController = TextEditingController();
   final TextEditingController observacaoController = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    _numeroOrdem = listaOrdensServico.isEmpty
-        ? 1
-        : listaOrdensServico.last.numero + 1;
-  }
-
-  Future<void> _selecionarFoto() async {
-    final XFile? imagem = await _picker.pickImage(source: ImageSource.gallery);
-    if (imagem != null) {
-      setState(() {
-        fotoPath = imagem.path;
-      });
-    }
-  }
-
-  void _selecionarDataSolicitacao() async {
-    final data = await showDatePicker(
+  Future<void> _pickDataSolicitacao() async {
+    DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2023),
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (data != null) {
-      setState(() => _dataSolicitacao = data);
-    }
+    if (picked != null) setState(() => dataSolicitacao = picked);
   }
 
-  void _selecionarDataFinalizacao() async {
-    final data = await showDatePicker(
+  Future<void> _pickDataFinalizacao() async {
+    DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2023),
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (data != null) {
-      setState(() => _dataFinalizacao = data);
-    }
+    if (picked != null) setState(() => dataFinalizacao = picked);
   }
 
-  void _limparCampos() {
-    setState(() {
-      _numeroOrdem = listaOrdensServico.isEmpty
-          ? 1
-          : listaOrdensServico.last.numero + 1;
-      _dataSolicitacao = null;
-      _dataFinalizacao = null;
-      tipoManutencao = "";
-      colaboradorSelecionado = null;
-      setor = "";
-      fotoPath = null;
-      observacao = "";
-      tipoController.clear();
-      setorController.clear();
-      observacaoController.clear();
-    });
-  }
-
-  void _salvarOrdem() {
-    if (_dataSolicitacao == null ||
+  void _salvarOrdemServico() {
+    if (dataSolicitacao == null ||
         tipoManutencao.isEmpty ||
         colaboradorSelecionado == null ||
-        setor.isEmpty) {
+        setorManutencao.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Preencha todos os campos obrigatórios")),
+        const SnackBar(
+          content: Text('Preencha todos os campos obrigatórios'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    final novaOrdem = OrdemServico(
-      numero: _numeroOrdem,
-      dataSolicitacao: _dataSolicitacao!,
-      tipoManutencao: tipoManutencao,
-      colaborador: colaboradorSelecionado!,
-      setor: setor,
-      dataFinalizacao: _dataFinalizacao,
-      foto: fotoPath,
-      observacao: observacao,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Ordem de Serviço #$osNumero salva com sucesso!'),
+        backgroundColor: Colors.green,
+      ),
     );
 
     setState(() {
-      listaOrdensServico.add(novaOrdem);
-      _limparCampos();
+      osNumero++;
+      dataSolicitacao = null;
+      tipoManutencao = '';
+      colaboradorSelecionado = null;
+      setorManutencao = '';
+      dataFinalizacao = null;
+      fotoPath = null;
+      observacaoController.clear();
+      tipoController.clear();
+      setorController.clear();
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Ordem de serviço salva com sucesso!")),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final listaColaboradores =
-        listaUsuarios.where((u) => u.nivel == "comum").toList();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ordem de Serviço", style: TextStyle(color: Colors.black)),
-        backgroundColor: const Color(0xFFB2DFDB),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text('Ordem de Serviço - Usuário: ${widget.usuarioLogado.nome}'),
       ),
-      backgroundColor: const Color(0xFFB2DFDB),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text('OS Nº $osNumero', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+
+            // Data de solicitação
             Row(
               children: [
-                const Text("Ordem de Serviço: ",
-                    style:
-                        TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                Text("$_numeroOrdem", style: const TextStyle(color: Colors.black)),
+                Expanded(
+                  child: Text(
+                    dataSolicitacao != null
+                        ? 'Data Solicitação: ${dataSolicitacao!.day}/${dataSolicitacao!.month}/${dataSolicitacao!.year}'
+                        : 'Selecione a data da solicitação',
+                  ),
+                ),
+                IconButton(icon: const Icon(Icons.calendar_today), onPressed: _pickDataSolicitacao),
               ],
             ),
             const SizedBox(height: 10),
-            ListTile(
-              title: Text(_dataSolicitacao == null
-                  ? "Selecione Data Solicitação"
-                  : "Data Solicitação: ${_dataSolicitacao!.day}/${_dataSolicitacao!.month}/${_dataSolicitacao!.year}"),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: _selecionarDataSolicitacao,
-            ),
+
+            // Tipo da manutenção
             TextField(
               controller: tipoController,
-              decoration: const InputDecoration(labelText: "Tipo da Manutenção"),
+              decoration: const InputDecoration(labelText: 'Tipo da Manutenção', border: OutlineInputBorder()),
               onChanged: (val) => tipoManutencao = val,
             ),
             const SizedBox(height: 10),
+
+            // Seleção do colaborador
             DropdownButtonFormField<Usuario>(
-              decoration: const InputDecoration(labelText: "Colaborador"),
               value: colaboradorSelecionado,
-              items: listaColaboradores
+              decoration: const InputDecoration(labelText: 'Colaborador', border: OutlineInputBorder()),
+              items: widget.colaboradores
                   .map((u) => DropdownMenuItem(
                         value: u,
                         child: Text(u.nome),
                       ))
                   .toList(),
-              onChanged: (u) => setState(() => colaboradorSelecionado = u),
+              onChanged: (val) => setState(() => colaboradorSelecionado = val),
             ),
             const SizedBox(height: 10),
+
+            // Setor da manutenção
             TextField(
               controller: setorController,
-              decoration: const InputDecoration(labelText: "Setor da Manutenção"),
-              onChanged: (val) => setor = val,
+              decoration: const InputDecoration(labelText: 'Setor da Manutenção', border: OutlineInputBorder()),
+              onChanged: (val) => setorManutencao = val,
             ),
             const SizedBox(height: 10),
-            ListTile(
-              title: Text(_dataFinalizacao == null
-                  ? "Selecione Data Finalização"
-                  : "Data Finalização: ${_dataFinalizacao!.day}/${_dataFinalizacao!.month}/${_dataFinalizacao!.year}"),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: _selecionarDataFinalizacao,
-            ),
-            const SizedBox(height: 10),
-            // Upload de Foto
+
+            // Data finalização
             Row(
               children: [
-                ElevatedButton(
-                  onPressed: _selecionarFoto,
-                  child: const Text("Selecionar Foto"),
+                Expanded(
+                  child: Text(
+                    dataFinalizacao != null
+                        ? 'Data Finalização: ${dataFinalizacao!.day}/${dataFinalizacao!.month}/${dataFinalizacao!.year}'
+                        : 'Selecione a data de finalização',
+                  ),
                 ),
-                const SizedBox(width: 10),
-                fotoPath != null
-                    ? Image.file(File(fotoPath!), width: 80, height: 80, fit: BoxFit.cover)
-                    : const Text("Nenhuma foto selecionada", style: TextStyle(color: Colors.black)),
+                IconButton(icon: const Icon(Icons.calendar_today), onPressed: _pickDataFinalizacao),
               ],
             ),
             const SizedBox(height: 10),
+
+            // Foto opcional
+            ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Função de foto não implementada ainda')),
+                );
+              },
+              child: const Text('Adicionar Foto (Opcional)'),
+            ),
+            const SizedBox(height: 10),
+
+            // Observação
             TextField(
               controller: observacaoController,
-              decoration: const InputDecoration(labelText: "Observação"),
+              decoration: const InputDecoration(labelText: 'Observação', border: OutlineInputBorder()),
               maxLines: 3,
               onChanged: (val) => observacao = val,
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(onPressed: _limparCampos, child: const Text("Limpar")),
-                ElevatedButton(onPressed: _salvarOrdem, child: const Text("Salvar")),
-                ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Voltar")),
-              ],
-            ),
+
+            ElevatedButton(onPressed: _salvarOrdemServico, child: const Text('Salvar Ordem de Serviço')),
           ],
         ),
       ),

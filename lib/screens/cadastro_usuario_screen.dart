@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'usuario_modelo.dart';
+import '../models/usuario_modelo.dart';
 
 class CadastroUsuarioScreen extends StatefulWidget {
   final Usuario usuarioLogado;
@@ -10,122 +10,83 @@ class CadastroUsuarioScreen extends StatefulWidget {
 }
 
 class _CadastroUsuarioScreenState extends State<CadastroUsuarioScreen> {
-  final TextEditingController nomeController = TextEditingController();
-  final TextEditingController loginController = TextEditingController();
-  final TextEditingController senhaController = TextEditingController();
-  final TextEditingController setorController = TextEditingController();
-  String nivel = "comum";
-  String? fotoPath;
+  final nomeController = TextEditingController();
+  final loginController = TextEditingController();
+  final senhaController = TextEditingController();
+  final setorController = TextEditingController();
 
-  void _salvarUsuario() {
-    if (nomeController.text.isEmpty ||
-        loginController.text.isEmpty ||
-        senhaController.text.isEmpty ||
-        setorController.text.isEmpty) {
+  void salvarUsuario() {
+    if (nomeController.text.isEmpty || loginController.text.isEmpty || senhaController.text.isEmpty || setorController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Preencha todos os campos")),
+        const SnackBar(content: Text("Preencha todos os campos"), backgroundColor: Colors.red, duration: Duration(seconds: 2))
       );
       return;
     }
 
-    final novoUsuario = Usuario(
-      nome: nomeController.text,
-      login: loginController.text,
-      senha: senhaController.text,
-      setor: setorController.text,
-      nivel: nivel,
-      foto: fotoPath,
-    );
-
-    setState(() {
-      listaUsuarios.add(novoUsuario);
-    });
-
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Usuário cadastrado com sucesso!")),
+      SnackBar(content: Text("Usuário ${nomeController.text} cadastrado com sucesso!"), backgroundColor: Colors.green, duration: const Duration(seconds: 2))
     );
 
-    // limpar campos
-    nomeController.clear();
-    loginController.clear();
-    senhaController.clear();
-    setorController.clear();
-    setState(() {
-      nivel = "comum";
-      fotoPath = null;
-    });
+    if (widget.usuarioLogado.nivel == "master") {
+      Future.delayed(const Duration(seconds: 2), () {
+        nomeController.clear();
+        loginController.clear();
+        senhaController.clear();
+        setorController.clear();
+      });
+    } else {
+      Future.delayed(const Duration(seconds: 2), () => Navigator.pop(context));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // apenas Master pode acessar essa tela
-    if (widget.usuarioLogado.nivel != "master") {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text("Acesso Negado"),
-          backgroundColor: const Color(0xFFB2DFDB),
-        ),
-        body: const Center(child: Text("Somente usuários Master podem acessar esta tela.")),
-      );
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Cadastro de Usuário", style: TextStyle(color: Colors.black)),
-        backgroundColor: const Color(0xFFB2DFDB),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       backgroundColor: const Color(0xFFB2DFDB),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(controller: nomeController, decoration: const InputDecoration(labelText: "Nome do Colaborador")),
-              const SizedBox(height: 10),
-              TextField(controller: loginController, decoration: const InputDecoration(labelText: "Login")),
-              const SizedBox(height: 10),
-              TextField(controller: senhaController, decoration: const InputDecoration(labelText: "Senha"), obscureText: true),
-              const SizedBox(height: 10),
-              TextField(controller: setorController, decoration: const InputDecoration(labelText: "Setor")),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: nivel,
-                decoration: const InputDecoration(labelText: "Nível de Acesso"),
-                items: const [
-                  DropdownMenuItem(value: "comum", child: Text("Comum")),
-                  DropdownMenuItem(value: "master", child: Text("Master")),
-                ],
-                onChanged: (value) {
-                  if (value != null) setState(() => nivel = value);
-                },
+      appBar: AppBar(title: const Text("Cadastro de Usuário"), backgroundColor: const Color(0xFFB2DFDB)),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(controller: nomeController, decoration: const InputDecoration(labelText: "Nome")),
+                    const SizedBox(height: 10),
+                    TextField(controller: loginController, decoration: const InputDecoration(labelText: "Login")),
+                    const SizedBox(height: 10),
+                    TextField(controller: senhaController, decoration: const InputDecoration(labelText: "Senha"), obscureText: true),
+                    const SizedBox(height: 10),
+                    TextField(controller: setorController, decoration: const InputDecoration(labelText: "Setor")),
+                    const SizedBox(height: 20),
+                    ElevatedButton(onPressed: salvarUsuario, child: const Text("Salvar")),
+                    const SizedBox(height: 10),
+                    if (widget.usuarioLogado.nivel == "master")
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                        child: const Text("Voltar para Dashboard"),
+                      ),
+                    const Spacer(),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(onPressed: _salvarUsuario, child: const Text("Salvar Usuário")),
-              const SizedBox(height: 20),
-              const Text("Lista de Usuários Cadastrados:", style: TextStyle(fontWeight: FontWeight.bold)),
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: listaUsuarios.length,
-                itemBuilder: (context, index) {
-                  final u = listaUsuarios[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      child: u.foto == null ? const Icon(Icons.person) : null,
-                      backgroundImage: u.foto != null ? AssetImage(u.foto!) : null,
-                    ),
-                    title: Text(u.nome),
-                    subtitle: Text("${u.setor} - ${u.nivel}"),
-                  );
-                },
-              )
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    nomeController.dispose();
+    loginController.dispose();
+    senhaController.dispose();
+    setorController.dispose();
+    super.dispose();
   }
 }

@@ -1,3 +1,4 @@
+
 flutter build web --release
 git add .
 git commit -m "Atualização do sistema"
@@ -30,8 +31,24 @@ TIPO DA MANUTENÇÃO
 NOME DO COLABORADOR (LISTA COM SETA PARA SELECIONAR O COLABORAR COMUM CADASTRADO)
 SETOR DA MANUTENÇÃO
 DATA FINALIZAÇÃO (FORMATO DATA)
-FOTO DA MANUTENÇÃO
+FOTO DA MANUTENÇÃO (OPCIONAL)
 OBSERVAÇÃO
 
 COM BOTÃO LIMPAR OS CAMPOS, SALVAR E VOLTAR A TELA ANTERIOR
 
+LANÇAR SISTEMA NO FIREBASE HOSTING
+firebase login
+firebase init
+Durante a inicialização, escolha:
+
+Hosting → Yes
+
+Use an existing project → selecione seu projeto (teste-publicar)
+
+Public directory → build/web
+
+Configure as SPA → Yes
+
+Overwrite index.html → No
+
+Opcional: também inicialize Firestore e Storage se ainda não tiver feito.
